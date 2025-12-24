@@ -49,23 +49,25 @@ namespace Bai05
                     int endIndex = totalEmails - 1;
 
                     var summaries = await inbox.FetchAsync(startIndex, endIndex,
-                        MessageSummaryItems.Envelope | MessageSummaryItems.InternalDate);
-
-                    int limit = Math.Min(50, inbox.Count);
+                        MessageSummaryItems.UniqueId |
+                        MessageSummaryItems.Envelope |
+                        MessageSummaryItems.InternalDate);
 
                     foreach (var item in summaries.Reverse())
                     {
                         string from = item.Envelope.From.FirstOrDefault()?.ToString() ?? "(No sender)";
                         string subject = item.Envelope.Subject ?? "(No subject)";
-                        string datetime = item.InternalDate.HasValue
-                            ? item.InternalDate.Value.ToString("dd/MM/yyyy HH:mm")
-                            : "(No date)";
+                        string datetime = item.InternalDate.HasValue ? item.InternalDate.Value.ToString("dd/MM/yyyy HH:mm") : "(No date)";
 
-                        ListViewItem lvItem = new ListViewItem(subject);
-                        lvItem.SubItems.Add(from);
-                        lvItem.SubItems.Add(datetime);
+                        ListViewItem lvItem = new ListViewItem(subject); 
+                        lvItem.SubItems.Add(from); 
+                        lvItem.SubItems.Add(datetime); 
+
+                        lvItem.Tag = item.UniqueId; 
+                        
                         lstviewMain.Items.Add(lvItem);
                     }
+
                     client.Disconnect(true);
                 }
             }
@@ -97,17 +99,20 @@ namespace Bai05
                     if (!inbox.IsOpen)
                         await inbox.OpenAsync(FolderAccess.ReadOnly);
 
-                    int selectedIndex = lstviewMain.SelectedItems[0].Index;
-                    int emailIndex = inbox.Count - 1 - selectedIndex;
 
-                    var message = await inbox.GetMessageAsync(emailIndex);
+                    var selected = lstviewMain.SelectedItems[0];
+                    var uid = (UniqueId)selected.Tag;
+                    var message = await inbox.GetMessageAsync(uid);
 
                     // Kiểm tra Subject
                     if (message.Subject != "Đóng góp món ăn")
                         throw new FormatException("Email không đúng định dạng yêu cầu.");
 
                     string contributor = (message.From != null) ? message.From.ToString() : "Người đóng góp ẩn danh"; // Nếu không có tên
-                    string? messageId = message.MessageId ?? Guid.NewGuid().ToString();
+                    string messageId = message.MessageId;
+                    if (string.IsNullOrWhiteSpace(messageId))
+                        messageId = $"UID:{uid.Id}";
+
                     DateTime processedAt = DateTime.Now;
 
                     // Parse 
@@ -118,17 +123,10 @@ namespace Bai05
                     {
                         conn.Open();
 
-                        // Thêm các giá trị vào ProcessedEmails để tránh trùng lặp
-                        string sqlEmail = "INSERT OR IGNORE INTO ProcessedEmails (MessageId, ProcessedAt) VALUES (@MessageId, @ProcessedAt)";
-                        using (var cmd = new SQLiteCommand(sqlEmail, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@MessageId", messageId);
-                            cmd.Parameters.AddWithValue("@ProcessedAt", processedAt);
-                            cmd.ExecuteNonQuery();
-                        }
 
                         // Thêm Các giá trị của món ăn
-                        bool DaThemMonAn = false;
+                        int addedCount = 0;
+                        int duplicateCount = 0;
 
                         foreach (var line in lines)
                         {
@@ -140,17 +138,15 @@ namespace Bai05
 
                             // Kiểm tra trùng lặp
                             string checkSql =   @"SELECT COUNT(*) FROM DishContributions 
-                                                WHERE MessageId = @MessageId AND DishName = @DishName";
+                                                WHERE DishName = @DishName";
                             using (var checkCmd = new SQLiteCommand(checkSql, conn))
                             {
-                                checkCmd.Parameters.AddWithValue("@MessageId", messageId);
                                 checkCmd.Parameters.AddWithValue("@DishName", dishName);
 
                                 long count = (long)checkCmd.ExecuteScalar();
                                 if (count > 0)
                                 {
-                                    MessageBox.Show($"Những món ăn này đã được thêm vào từ trước: {dishName}",
-                                        "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                    duplicateCount++;
                                     continue; 
                                 }
                             }
@@ -169,11 +165,11 @@ namespace Bai05
                                 cmd.ExecuteNonQuery();
                             }
 
-                            DaThemMonAn = true;
+                            addedCount++;
                             // Add vào FlowLayoutPanel của MainForm
                             Panel itemPanel = new Panel { Width = 250, Height = 100, Margin = new Padding(5), BorderStyle = BorderStyle.FixedSingle };
                             itemPanel.Controls.Add(new Label { Text = dishName, AutoSize = true, Font = new Font("Segoe UI", 10, FontStyle.Bold), Location = new Point(5, 5) });
-                            itemPanel.Controls.Add(new Label { Text = contributor, AutoSize = true, Font = new Font("Segoe UI", 10, FontStyle.Bold), Location = new Point(5, 30) });
+                            itemPanel.Controls.Add(new Label { Text = contributor, AutoSize = true, Font = new Font("Segoe UI", 10), Location = new Point(5, 30) });
                             itemPanel.Controls.Add(new Label { Text = imageUrl, AutoSize = true, Location = new Point(5, 55) });
 
                             if (this.Owner is MainForm mainForm)
@@ -181,13 +177,17 @@ namespace Bai05
                                 mainForm.flowAll.Controls.Add(itemPanel);
                             }
                         }
-                        if(DaThemMonAn)
+                        if(addedCount > 0 && duplicateCount > 0)
                         {
-                            MessageBox.Show("Đã thêm món ăn thành công vào database.", "Thành công");
+                            MessageBox.Show("Đã thêm {addedCount} món ăn mới. Có {duplicatedCount} món ăn đã tồn tại", "Kết Quả");
+                        }
+                        else if (addedCount > 0)
+                        {
+                            MessageBox.Show("Đã thêm {addedCount món ăn mới vào database.", "Thành công");
                         }
                         else
                         {
-                            MessageBox.Show("Không có món ăn mới nào để thêm vào database.");
+                            MessageBox.Show("Những món ăn này đã được thêm vào từ trước, không có món mới nào.", "Thông báo");
                         }
                             client.Disconnect(true);
                     }

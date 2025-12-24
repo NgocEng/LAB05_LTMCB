@@ -292,7 +292,7 @@
             Controls.Add(pnlStatus);
             Controls.Add(tabControl);
             Controls.Add(pnlHeader);
-            MinimumSize = new Size(820, 600);
+            MinimumSize = new Size(1049, 884);
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Hôm nay ăn gì?";

@@ -1,8 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "+Y6MFDgE/u8=",
+  "dgSpecHash": "pYNjZMuXDnI=",
   "success": true,
-  "projectFilePath": "C:\\Users\\jayki\\source\\LAB5\\LAB05_LTMCB\\Bai4\\Bai4.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "C:\\Users\\ADMIN\\Documents\\ForTheFuture\\Sem3\\LTMCB\\THLab5\\Bai4\\Bai4.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ADMIN\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.22\\microsoft.windowsdesktop.app.ref.8.0.22.nupkg.sha512",
+    "C:\\Users\\ADMIN\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.22\\microsoft.netcore.app.ref.8.0.22.nupkg.sha512",
+    "C:\\Users\\ADMIN\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.22\\microsoft.aspnetcore.app.ref.8.0.22.nupkg.sha512",
+    "C:\\Users\\ADMIN\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.22\\microsoft.netcore.app.host.win-x64.8.0.22.nupkg.sha512"
+  ],
   "logs": []
 }

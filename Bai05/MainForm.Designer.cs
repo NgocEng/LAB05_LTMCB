@@ -118,6 +118,7 @@
             txtPasswordLogin.Name = "txtPasswordLogin";
             txtPasswordLogin.Size = new Size(308, 21);
             txtPasswordLogin.TabIndex = 5;
+            txtPasswordLogin.UseSystemPasswordChar = true;
             // 
             // lblEmailLogin
             // 
